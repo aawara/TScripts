@@ -1,0 +1,31 @@
+DECLARE @sqlmajorver int, @sqlcmd VARCHAR(4000)
+SELECT @sqlmajorver = CONVERT(int, (@@microsoftversion / 0x1000000) & 0xff);
+
+IF @sqlmajorver >= 11
+BEGIN
+	SET @sqlcmd = N'SELECT CASE WHEN ps.database_id = 32767 THEN ''ResourceDB'' ELSE DB_NAME(ps.database_id) END AS DatabaseName, 
+	CASE WHEN ps.database_id = 32767 THEN NULL ELSE OBJECT_NAME(ps.[object_id], ps.database_id) END AS ObjectName,
+	type_desc,
+	(SELECT qt.text AS [text()] 
+		FROM sys.dm_exec_procedure_stats (NOLOCK) ps2 CROSS APPLY sys.dm_exec_sql_text(ps2.sql_handle) qt 
+		WHERE ps2.database_id = ps.database_id AND ps2.[object_id] = ps.[object_id] 
+		FOR XML PATH(''''), TYPE) AS [sqltext],
+	qp.query_plan,
+	ps.cached_time,
+	ps.last_execution_time,
+	ps.execution_count,
+	ps.total_elapsed_time/ps.execution_count AS avg_elapsed_time,
+	ps.last_elapsed_time,
+	ps.total_worker_time/ps.execution_count AS avg_cpu_time,
+	ps.last_worker_time AS last_cpu_time,
+	ps.min_worker_time AS min_cpu_time, ps.max_worker_time AS max_cpu_time,
+	ps.total_logical_reads/ps.execution_count AS avg_logical_reads,
+	ps.last_logical_reads, ps.min_logical_reads, ps.max_logical_reads,
+	ps.total_physical_reads/ps.execution_count AS avg_physical_reads,
+	ps.last_physical_reads, ps.min_physical_reads, ps.max_physical_reads,
+	ps.total_logical_writes/ps.execution_count AS avg_logical_writes,
+	ps.last_logical_writes, ps.min_logical_writes, ps.max_logical_writes
+ FROM sys.dm_exec_procedure_stats (NOLOCK) ps
+ CROSS APPLY sys.dm_exec_query_plan(ps.plan_handle) qp'
+	EXEC (@sqlcmd);
+ END;
