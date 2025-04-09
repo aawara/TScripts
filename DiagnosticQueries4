@@ -1,0 +1,22 @@
+DECLARE @RC int
+DECLARE @sqluptime bit
+DECLARE @requests bit
+DECLARE @blocking bit
+DECLARE @spstats bit
+DECLARE @qrystats bit
+DECLARE @trstats bit
+DECLARE @fnstats bit
+DECLARE @top smallint
+
+-- TODO: Set parameter values here.
+
+EXECUTE @RC = [dbo].[usp_whatsup] 
+   @sqluptime =1
+  ,@requests =1
+  ,@blocking =1
+  ,@spstats =0
+  ,@qrystats =0
+  ,@trstats =0
+  ,@fnstats =0
+  ,@top =55
+GO
